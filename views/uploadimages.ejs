@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uploaded Images</title>
+    <style>
+        /* General Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 2rem;
+            color: #007bff;
+        }
+
+        /* Image Gallery Container */
+        div {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        img {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        p {
+            font-size: 1rem;
+            color: #666;
+            text-align: center;
+            grid-column: span 2; /* Makes text span the full width if displayed */
+        }
+    </style>
+</head>
+<body>
+    <h1>Your Uploaded Images</h1>
+    <div>
+        <% images.forEach(function(image) { %>
+            <% if (image.img && image.img.data) { %>
+                <img 
+                    src="data:image/<%= image.img.contentType %>;base64,<%= image.img.data.toString('base64') %>" 
+                    alt="Uploaded Image" 
+                />
+            <% } else { %>
+                <p>Image data not available.</p>
+            <% } %>
+        <% }); %>
+    </div>
+</body>
+</html>

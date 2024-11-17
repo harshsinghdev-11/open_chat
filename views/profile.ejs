@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome, <%= user.username %>!</title>
+    <style>
+        /* General Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #007bff;
+            font-size: 2rem;
+            text-align: center;
+        }
+
+        #chat-container {
+            width: 100%;
+            max-width: 700px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        .recipient-select {
+            margin-bottom: 15px;
+        }
+
+        .recipient-select label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .recipient-select select {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        /* Messages Area */
+        #messages {
+            width: 100%;
+            height: 300px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+            overflow-y: auto;
+            padding: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #messages p {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 10px;
+            max-width: 70%;
+        }
+
+        #messages p.self {
+            background-color: #007bff;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        #messages p:not(.self) {
+            background-color: #e9ecef;
+        }
+
+        /* Message Input Section */
+        .message-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .message-box input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .message-box button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .message-box button:hover {
+            background-color: #0056b3;
+        }
+
+        .message-box button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* File Upload Section */
+        form.upload-profile {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        form.upload-profile input[type="file"] {
+            padding: 5px;
+        }
+
+        form.upload-profile input[type="submit"] {
+            padding: 8px 15px;
+            font-size: 14px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        form.upload-profile input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <h1>Welcome, <%= user.username %>!</h1>
+
+        <!-- File Upload Form -->
+        <form action="/uploadprofile" method="post" enctype="multipart/form-data" class="upload-profile">
+            <input type="file" id="profileimage" name="profileimage">
+            <input hidden name="username" value="<%= user.username %>">
+            <input type="submit" value="Upload Profile Picture">
+        </form>
+
+        <!-- Recipient Selection -->
+        <div class="recipient-select">
+            <label for="recipient">Chat with:</label>
+            <select id="recipient">
+                <option value="" disabled selected>Select a user</option>
+                <% otherUsers.forEach(function (otherUser) { %>
+                    <option value="<%= otherUser.username %>"><%= otherUser.username %></option>
+                <% }); %>
+            </select>
+        </div>
+
+        <!-- Messages Display -->
+        <div id="messages"></div>
+
+        <!-- Message Input -->
+        <div class="message-box">
+            <input type="text" id="message" placeholder="Enter message" disabled>
+            <button id="sendbtn" disabled>Send</button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        const sendbtn = document.getElementById("sendbtn");
+        const messageInput = document.getElementById("message");
+        const allMessages = document.getElementById("messages");
+        const recipientSelect = document.getElementById("recipient");
+        const currentUsername = "<%= user.username %>";
+
+        // Enable message input and button when a recipient is selected
+        recipientSelect.addEventListener("change", () => {
+            if (recipientSelect.value) {
+                messageInput.disabled = false;
+                sendbtn.disabled = false;
+            } else {
+                messageInput.disabled = true;
+                sendbtn.disabled = true;
+            }
+        });
+
+        // Listen for incoming messages
+        socket.on("message", ({ sender, recipient, message }) => {
+            if (
+                (sender === currentUsername && recipient === recipientSelect.value) ||
+                (sender === recipientSelect.value && recipient === currentUsername)
+            ) {
+                const p = document.createElement("p");
+                p.innerText = sender === currentUsername ? `You: ${message}` : `${sender}: ${message}`;
+                p.classList.add(sender === currentUsername ? "self" : "other");
+                allMessages.appendChild(p);
+                allMessages.scrollTop = allMessages.scrollHeight;
+            }
+        });
+
+        // Send message
+        sendbtn.addEventListener("click", () => {
+            const message = messageInput.value.trim();
+            const recipient = recipientSelect.value;
+
+            if (message && recipient) {
+                socket.emit("user-message", { sender: currentUsername, recipient, message });
+                messageInput.value = "";
+            }
+        });
+    </script>
+</body>
+</html>
